@@ -1,9 +1,9 @@
-==================================================================================
+'===================================================================================
 '6.+ Описать класс «домашняя библиотека».
 '  + Предусмотреть возможность работы с произвольным числом книг,
 '  + Предусмотреть возможность поиска книги по какому-либо признаку (автору, дате публикации или названию),
 '  + Предусмотреть добавление книг в библиотеку,
-'  - Предусмотреть удаление книг из нее,
+'  + Предусмотреть удаление книг из нее,
 '  + Заполнить изначальную библиотеку следующим списком, взятых из текстового файла(данные хранить в формате XML):'
 '===================================================================================
 
@@ -249,9 +249,9 @@ Class MyLibrary
                             For each nodePublicationDate in colNodesSearchPublicationDate
                                 If nodePublicationDate.text = searchParametrPublicationDate Then
                                     searchToDelete = 1
-                                    nodePublicationDate.removeChild nodePublicationDate.lastchild
-                                    nodeNames.removechild nodePublicationDate.lastchild
-                                    nodeAuthors.removechild nodeAuthors.lastchild
+                                    nodePublicationDate.colNodesSearchPublicationDate.removeChild(nodePublicationDate)
+                                    nodeNames.colNodesSearchName.removechild(nodeNames)
+                                    nodeAuthors.colNodesSearchAuthor.removechild(nodeAuthors)
                                 End if
                             Next
                         End if
@@ -270,9 +270,10 @@ End Class
 
 Dim myObj
 Set myObj = New MyLibrary
-
+    
+    Set xmlParser = Nothing
     'Clear
-
+    Set xmlParser = CreateObject("Msxml2.DOMDocument")
     'Отключаем асинхронную загрузку
     xmlParser.async = False
     'Загружаем XML-документ
@@ -300,5 +301,3 @@ Do
                 MsgBox myObj.DeleteBook
         End Select
 Loop Until mainMenuNumber = 4    
-
- 
