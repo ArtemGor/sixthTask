@@ -46,7 +46,7 @@ Class MyLibrary
         "3.Search by publication date" & vbCr)
         Select Case searchParametrType
                 
-            Case 1                                                      'Choosed MainMenu-1-1
+            Case 1                                                       'Choosed MainMenu-1-1
                 searchParametrAuthor = inputBox("Input author:") 
                 Set colNodesNameOut = xmlParser.selectNodes("/HomeLibraly/AuthorCollection[Author = '" & searchParametrAuthor & "']/Book/Name")
                 Set colNodesShelfOut = xmlParser.selectNodes("/HomeLibraly/AuthorCollection[Author = '" & searchParametrAuthor & "']/Book/Shelf")
