@@ -1,0 +1,304 @@
+==================================================================================
+'6.+ Описать класс «домашняя библиотека».
+'  + Предусмотреть возможность работы с произвольным числом книг,
+'  + Предусмотреть возможность поиска книги по какому-либо признаку (автору, дате публикации или названию),
+'  + Предусмотреть добавление книг в библиотеку,
+'  - Предусмотреть удаление книг из нее,
+'  + Заполнить изначальную библиотеку следующим списком, взятых из текстового файла(данные хранить в формате XML):'
+'===================================================================================
+
+Class MyLibrary
+'===================================================================================
+'1 dims
+
+'===================================================================================
+'2.Construct/destruct
+
+    Private Sub Class_Initialize()
+
+    End Sub
+    
+    Private Sub Class_Terminate
+        'Освобождаем объектную переменную
+        Set xmlParser = Nothing
+    End Sub
+
+'===================================================================================
+'3.fun/proc
+    Function ShowError(XMLDOMParseError)
+        mess = _
+        "parseError.errorCode: " & XMLDOMParseError.errorCode & vbCrLf & _
+        "parseError.filepos: " & XMLDOMParseError.filepos & vbCrLf & _
+        "parseError.line: " & XMLDOMParseError.line & vbCrLf & _
+        "parseError.linepos: " & XMLDOMParseError.linepos & vbCrLf & _
+        "parseError.reason: " & XMLDOMParseError.reason & vbCrLf & _
+        "parseError.srcText: " & XMLDOMParseError.srcText & vbCrLf & _
+        "parseError.url: " & XMLDOMParseError.url & vbCrLf
+        Msgbox mess
+    End Function
+'===================================================================================
+'4.properies
+    Public Property Get FindBook
+        bookPlaceLimit = 6
+        searchParametrType = inputBox("Input number of search parametr:" & vbCr & vbCr &_
+        "1.Search by author" & vbCr &_
+        "2.Search by books name" & vbCr &_
+        "3.Search by publication date" & vbCr)
+        Select Case searchParametrType
+                
+            Case 1                                                      'Choosed MainMenu-1-1
+                searchParametrAuthor = inputBox("Input author:") 
+                Set colNodesNameOut = xmlParser.selectNodes("/HomeLibraly/AuthorCollection[Author = '" & searchParametrAuthor & "']/Book/Name")
+                Set colNodesShelfOut = xmlParser.selectNodes("/HomeLibraly/AuthorCollection[Author = '" & searchParametrAuthor & "']/Book/Shelf")
+                Set colNodesPlaceOut = xmlParser.selectNodes("/HomeLibraly/AuthorCollection[Author = '" & searchParametrAuthor & "']/Book/Place")
+                i = 0
+                For each nodeNode in colNodesShelfOut
+                    ReDim Preserve ShelfOut(i)
+                    ShelfOut(i) = nodeNode.text
+                    i = i + 1
+                Next
+                i = 0
+                For each nodeNode in colNodesPlaceOut
+                    ReDim Preserve PlaceOut(i)
+                    PlaceOut(i) = nodeNode.text
+                    i = i + 1
+                Next
+                i = 0
+                List = "Books by " & searchParametrAuthor & ":"
+                For each nodeNode in colNodesNameOut
+                    found = 1
+                    ReDim Preserve NameOut(i)
+                    NameOut(i) = nodeNode.text
+                    List = List  & vbCr & "Book " & NameOut(i) & " placed on " & ShelfOut(i) & " shelf on " & PlaceOut(i) & " place"
+                    i = i + 1
+                Next
+                If found = 1 Then
+                    FindBook = List
+                Else
+                    FindBook = "Books by " & searchParametrAuthor & " is not found"
+                End If
+                
+            Case 2                                                      'Choosed MainMenu-1-2
+                searchParametrBook = inputBox("Input books name:")
+                List = "Book " & searchParametrBook & " is found" & vbCr
+                Set colNodes = xmlParser.getElementsByTagName("Name")
+                Set nodeTitle = colNodes.nextNode
+                For each nodeTitle In colNodes
+                    If nodeTitle.text = searchParametrBook Then
+                        found = 1
+                        Set nodeShelf = nodeTitle.nextSibling.nextSibling
+                        x = nodeShelf.text
+                        Set nodePlace = nodeTitle.nextSibling.nextSibling.nextSibling
+                        y = nodePlace.text
+                        List = List & "on " & x & "th shelf and on " & y & "th place" & vbCr
+                    End If
+                    Set nodeTitle = colNodes.nextNode
+                Next
+                If found = 1 Then FindBook = List Else FindBook = "Book " & searchParametrBook & " is not found" End If
+            
+            Case 3                                                      'Choosed MainMenu-1-3
+                searchParametrPublicationDate = inputBox("Input publication date:")
+                List = "Book, published " & searchParametrPublicationDate & ", is found" & vbCr
+                Set colNodes = xmlParser.getElementsByTagName("PublicationDate")
+                Set nodeTitle = colNodes.nextNode
+                For each nodeTitle In colNodes
+                    If nodeTitle.text = searchParametrPublicationDate Then
+                        found = 1
+                        Set nodeShelf = nodeTitle.nextSibling
+                        x = nodeShelf.text
+                        Set nodePlace = nodeTitle.nextSibling.nextSibling
+                        y = nodePlace.text
+                        List = List & "on " & x & "th shelf and on " & y & "th place" & vbCr
+                    End If
+                    Set nodeTitle = colNodes.nextNode
+                Next
+                If found = 1 Then FindBook = List Else FindBook = "Book, published " & searchParametrPublicationDate & ", is not found" End If
+                
+        End Select
+    End Property
+    
+    Public Property Get AddBook
+        bookPlaceLimit = 6
+        '1.Ввести автора, название и дату публикации. bookfound = 0
+        newBookAuthor = inputBox("Input book's author:")
+        newBookName = inputBox("Input book's name:")
+        newBookPublicationDate = inputBox("Input book's publication date:")
+        bookfound = 0
+        
+        '2.Если коллекция автора есть(=если поиск по АВТОР возвращает какие-то элементы), то
+        Set colNodesSearchAuthor = xmlParser.getElementsByTagName("Author")
+        colNodesSearchAuthor.reset
+        Set nodeAuthors = colNodesSearchAuthor.nextNode
+            For each nodeAuthors In colNodesSearchAuthor
+                If nodeAuthors.text = newBookAuthor Then
+                    '2-yes.Если в коллекции есть такая книга(если при поиске по элементам коллекции АВТОР есть элемент с NAME=newBookName, то 
+                    Set colNodesSearchName = xmlParser.getElementsByTagName("Name")
+                    Set nodeNames = colNodesSearchName.nextNode
+                    bookfound = 1
+                    For each nodeNames in colNodesSearchName
+                        If nodeNames.text = newBookName Then
+                            '2-yes-yes.Если есть такая книга с такой датой публикации(если при поиске по элементам коллекции с АВТОР=newBookAuthor 'элемент NAMe=newBookName имеет такого же автора, что и элемент PublicationDate=newBookPublicationDate, то
+                            Set colNodesSearchPublicationDate = xmlParser.getElementsByTagName("Name")
+                            Set nodePublicationDate = colNodesSearchPublicationDate.nextNode
+                            For each nodePublicationDate in colNodesSearchPublicationDate
+                                If nodePublicationDate.text = newBookPublicationDate Then
+                                    'Сообщить, что книга уже в библиотеке.
+                                    bookfound = 2
+                                End if
+                            Next
+                        End if
+                    Next
+                End if
+            Next                
+        '3.Если bookfound = 2
+        If bookfound = 2 Then
+            'Сообщить, что книга уже в библиотеке
+            AddBook = "This book is already in library."
+        End if
+        'Если bookfound = 1 or 0
+           If bookfound = 1 or bookfound = 0 Then
+            'Создать книгу в существующей или в новой коллекции    
+            'Получаем корневой элемент = создаём объект HomeLibraly, который будет равен корневому элементу xml-документа
+            Set HomeLibralyElement = xmlParser.documentElement
+            'Получаем первый элемент - создаём объект первого элемента файла
+            Set firstAuthorCollectionElement = xmlParser.documentElement.childNodes(0)
+            'Вставляем новый элемент перед первым
+
+            If bookfound = 0 Then
+                Set newAuthorCollectionElement = HomeLibralyElement.insertBefore(xmlParser.createElement("AuthorCollection"), firstAuthorCollectionElement)
+                'Добавляем элемент АВТОР и присваиваем ему значение newBookAuthor
+                Set newAuthorElement = newAuthorCollectionElement.appendChild(xmlParser.createElement("Author"))
+                newAuthorElement.text = newBookAuthor
+            ElseIf bookfound = 1 Then
+                Set newAuthorCollectionElement = xmlParser.documentElement.childNodes(0)
+                Set newAuthorElement = xmlParser.documentElement.childNodes(0).childNodes(0)
+            End if
+            'Добавляем новую книгу
+            Set newBookElement = newAuthorCollectionElement.appendChild(xmlParser.createElement("Book"))
+            'Добавляем имя новой книге
+            Set newNameElement = newBookElement.appendChild(xmlParser.createElement("Name"))
+            newNameElement.text = newBookName
+            'Добавляем дату публикации новой книге
+            Set newPublicationDateElement = newBookElement.appendChild(xmlParser.createElement("PublicationDate"))
+            newPublicationDateElement.text = newBookPublicationDate
+            
+            'Добавляем номер полки
+            '1.Узнаём номера последней полки и места
+            Set colNodesShelfs = xmlParser.getElementsByTagName("Shelf")
+            Set nodeTitle = colNodesShelfs.nextNode
+            lastBookShelf = 0
+            For each nodeTitle in colNodesShelfs
+                x = nodeTitle.text
+                If x > CInt(lastBookShelf) Then
+                    lastBookShelf = x    
+                End If
+            Next
+            Set colNodesPlaces = xmlParser.getElementsByTagName("Place")
+            Set nodeTitle = colNodesPlaces.nextNode
+            lastBookPlace = 0
+            For each nodeTitle in colNodesPlaces
+                x = CInt(nodeTitle.text)
+                If x > lastBookPlace Then
+                    lastBookPlace = x    
+                End If
+            Next
+            '2.Устанавливаем номера полки и места новой книги
+            Set newShelfElement = newBookElement.appendChild(xmlParser.createElement("Shelf"))
+            if lastBookPlace >= bookPlaceLimit then
+                newShelfElement.text = lastBookShelf + 1
+            Else
+                newShelfElement.text = lastBookShelf
+            End if
+            lastBookShelf = newShelfElement.text
+            'Добавляем номер места
+            Set newPlaceElement = newBookElement.appendChild(xmlParser.createElement("Place"))
+            if lastBookPlace >= bookPlaceLimit then
+                newPlaceElement.text = 1
+            Else
+                newPlaceElement.text = lastBookPlace + 1
+            End if
+            'Сообщить, что книга добавлена
+            AddBook = "Your book is added"
+        'Конец "если"
+        End if
+        'Сохраняем весь документ
+        xmlParser.save "C:\Users\AYGoryainov\Desktop\Артём\4. Шесть задач от 19.08.19\HomeLibrary.xml"
+    End Property
+
+    Public Property Get DeleteBook
+        bookPlaceLimit = 6
+        '1.Input book for deleting
+        searchParametrAuthor = inputBox("Input author:")
+        searchParametrBook = inputBox("Input books name:")        
+        searchParametrPublicationDate = inputBox("Input publication date:")
+        '2.Find book
+        searchToDelete = 0
+        Set colNodesSearchAuthor = xmlParser.getElementsByTagName("Author")
+        colNodesSearchAuthor.reset
+        Set nodeAuthors = colNodesSearchAuthor.nextNode
+            For each nodeAuthors In colNodesSearchAuthor
+                If nodeAuthors.text = searchParametrAuthor Then
+                    '2-yes.Если в коллекции есть такая книга(если при поиске по элементам коллекции АВТОР есть элемент с NAME=newBookName, то 
+                    Set colNodesSearchName = xmlParser.getElementsByTagName("Name")
+                    Set nodeNames = colNodesSearchName.nextNode
+                    For each nodeNames in colNodesSearchName
+                        If nodeNames.text = searchParametrBook Then
+                            '2-yes-yes.Если есть такая книга с такой датой публикации(если при поиске по элементам коллекции с АВТОР=newBookAuthor 'элемент NAMe=newBookName имеет такого же автора, что и элемент PublicationDate=newBookPublicationDate, то
+                            Set colNodesSearchPublicationDate = xmlParser.getElementsByTagName("Name")
+                            Set nodePublicationDate = colNodesSearchPublicationDate.nextNode
+                            For each nodePublicationDate in colNodesSearchPublicationDate
+                                If nodePublicationDate.text = searchParametrPublicationDate Then
+                                    searchToDelete = 1
+                                    nodePublicationDate.removeChild nodePublicationDate.lastchild
+                                    nodeNames.removechild nodePublicationDate.lastchild
+                                    nodeAuthors.removechild nodeAuthors.lastchild
+                                End if
+                            Next
+                        End if
+                    Next
+                    
+                End if
+            Next    
+        If searchToDelete = 1 Then
+            DeleteBook = "Book is deleted."
+        Else
+            DeleteBook = "Book not found."
+        End If
+    End Property
+    
+End Class
+
+Dim myObj
+Set myObj = New MyLibrary
+
+    'Clear
+
+    'Отключаем асинхронную загрузку
+    xmlParser.async = False
+    'Загружаем XML-документ
+    xmlParser.load "C:\Users\AYGoryainov\Desktop\Артём\4. Шесть задач от 19.08.19\HomeLibrary.xml"
+    'Если случилась ошибка, выдаём информацию о ней и завершаем работу
+    If xmlParser.parseError.errorCode Then
+        ShowError xmlParser.parseError
+    End If
+
+Do
+        found = 0
+        mainMenuNumber = InputBox ("Welcome to HomeLibrary" & vbCr &_
+        "Input number, what you want to do:" & vbCr & vbCr &_
+        "1.Find book." & vbCr &_
+        "2.Add book." & vbCr &_
+        "3.Delete book." & vbCr &_
+        "4.Exit library")
+    
+        Select Case mainMenuNumber
+            Case 1
+                MsgBox myObj.FindBook
+            Case 2
+                MsgBox myObj.AddBook
+            Case 3
+                MsgBox myObj.DeleteBook
+        End Select
+Loop Until mainMenuNumber = 4    
+
+ 
